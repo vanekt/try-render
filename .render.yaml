@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: backend
+    env: go
+    buildCommand: go build -o app main.go
+    startCommand: ./app
+    plan: free
+    envVars: []
+    autoDeploy: true
+    rootDir: backend
+
+  - type: web
+    name: frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist -l 3000
+    plan: free
+    envVars: []
+    autoDeploy: true
+    rootDir: frontend
+    routes:
+      - type: rewrite
+        source: "/ping"
+        destination: "https://backend-<your-backend-service-id>.onrender.com/ping"
