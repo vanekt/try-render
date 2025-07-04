@@ -3,6 +3,8 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
+
 function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,7 +14,7 @@ function App() {
     setLoading(true);
     setError(false);
 
-    fetch("/ping")
+    fetch(`${backendUrl}/ping`)
       .then((res) => res.json())
       .then((data) => {
         setResult(data.result);
