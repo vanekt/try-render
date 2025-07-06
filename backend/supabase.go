@@ -12,10 +12,12 @@ type SupabaseService struct {
 }
 
 func NewSupabaseService() *SupabaseService {
-	url := os.Getenv("SUPABASE_URL")
-	key := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
-	client := supa.CreateClient(url, key)
-	return &SupabaseService{client: client}
+	return &SupabaseService{
+		client: supa.CreateClient(
+			os.Getenv("SUPABASE_URL"),
+			os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		),
+	}
 }
 
 func (s *SupabaseService) LoginOTP(ctx context.Context, email string) error {

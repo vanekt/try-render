@@ -29,14 +29,6 @@ func setCookie(
 		}
 	}
 
-	http.SetCookie(g.Writer, &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     "/",
-		Domain:   domain,
-		MaxAge:   maxAge,
-		Secure:   secure,
-		HttpOnly: httpOnly,
-		SameSite: sameSite,
-	})
+	g.SetSameSite(sameSite)
+	g.SetCookie(name, value, maxAge, "/", domain, secure, httpOnly)
 }
