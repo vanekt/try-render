@@ -2,8 +2,9 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
+import AuthForm from "./AuthForm";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
+const apiUrl = import.meta.env.VITE_BACKEND_URL || "/api";
 
 function App() {
   const [result, setResult] = useState(null);
@@ -14,11 +15,44 @@ function App() {
     setLoading(true);
     setError(false);
 
-    fetch(`${backendUrl}/ping`)
+    fetch(`${apiUrl}/ping`)
       .then((res) => res.json())
       .then((data) => {
         setResult(data.result);
       })
+      .catch(() => {
+        setError(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const checkProtected = () => {
+    setLoading(true);
+    setError(false);
+
+    fetch(`${apiUrl}/protected`)
+      .then((res) => res.json())
+      .then((data) => {
+        setResult(data.result);
+      })
+      .catch(() => {
+        setError(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const logout = () => {
+    setLoading(true);
+    setError(false);
+
+    fetch(`${apiUrl}/logout`, {
+      method: "POST",
+    })
+      .then((res) => res.json())
       .catch(() => {
         setError(true);
       })
@@ -40,6 +74,8 @@ function App() {
       <h1>Vite + React</h1>
       <div className="card">
         <button onClick={checkConnection}>Check connection</button>
+        <button onClick={checkProtected}>Check protected</button>
+        <button onClick={logout}>Logout</button>
         <p>
           {loading && "Waiting for response..."}
           {error && "Connection error"}
@@ -49,6 +85,7 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <AuthForm />
     </>
   );
 }

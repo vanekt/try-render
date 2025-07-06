@@ -1,34 +1,36 @@
 package main
 
 import (
-	"encoding/json"
-	"log"
-	"net/http"
+	"fmt"
 	"os"
-	"time"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+	gin.SetMode(gin.ReleaseMode)
 
-	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		if allowedOrigin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		}
+	router := gin.New()
+	router.Use(loggingMiddleware())
+	router.Use(recoveryMiddleware())
+	router.Use(corsMiddleware())
 
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+	container := NewContainer()
 
-		log.Println("🏓 Ping...")
-		time.Sleep(3 * time.Second)
-		log.Println("🏓 Pong")
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"result": "pong"})
-	})
+	router.GET("/ping", bindRoute(handlePing, container))
+	router.POST("/login", bindRoute(handleLoginOTP, container))
+	router.POST("/confirm", bindRoute(handleConfirmOTP, container))
+	router.POST("/logout", bindRoute(handleLogout, container))
 
-	http.ListenAndServe(":8080", nil)
+	auth := router.Group("/", authMiddleware(container))
+	{
+		auth.GET("/protected", bindRoute(handleProtected, container))
+	}
+
+	port := os.Getenv("PORT")
+	container.Logger.Info(fmt.Sprintf("🚀 Server starting on :%s", port))
+	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
+		container.Logger.Error("Failed to start server:", err)
+	}
 }
