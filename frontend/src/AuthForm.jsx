@@ -26,6 +26,7 @@ export default function AuthForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code }),
+        credentials: "include",
       });
       const data = await res.json();
 
