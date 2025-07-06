@@ -32,7 +32,7 @@ function App() {
     setLoading(true);
     setError(false);
 
-    fetch(`${apiUrl}/protected`, { credentials: "include" })
+    fetch(`${apiUrl}/protected`)
       .then((res) => res.json())
       .then((data) => {
         setResult(data.result);
@@ -51,7 +51,6 @@ function App() {
 
     fetch(`${apiUrl}/logout`, {
       method: "POST",
-      credentials: "include",
     })
       .then((res) => res.json())
       .catch(() => {

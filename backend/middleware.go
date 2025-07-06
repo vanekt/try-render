@@ -38,10 +38,10 @@ func recoveryMiddleware() gin.HandlerFunc {
 
 func authMiddleware(container *Container) gin.HandlerFunc {
 	return func(g *gin.Context) {
-		accessToken, err1 := g.Cookie("access_token")
+		accessToken, _ := g.Cookie("access_token")
 		refreshToken, err2 := g.Cookie("refresh_token")
-		if err1 != nil || err2 != nil {
-			container.Logger.Error("[authMiddleware] No access or refresh token")
+		if err2 != nil {
+			container.Logger.Error("[authMiddleware] No refresh token")
 			g.AbortWithStatusJSON(http.StatusUnauthorized, nil)
 			return
 		}
