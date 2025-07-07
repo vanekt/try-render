@@ -19,10 +19,6 @@ func main() {
 	container := NewContainer()
 
 	router.GET("/ping", bindRoute(handlePing, container))
-	router.POST("/login", bindRoute(handleLoginOTP, container))
-	router.POST("/confirm", bindRoute(handleConfirmOTP, container))
-	router.POST("/logout", bindRoute(handleLogout, container))
-
 	auth := router.Group("/", authMiddleware(container))
 	{
 		auth.GET("/protected", bindRoute(handleProtected, container))

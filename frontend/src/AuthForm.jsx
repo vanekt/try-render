@@ -1,45 +1,48 @@
 import { useState } from "react";
-
-const apiUrl = import.meta.env.VITE_BACKEND_URL || "/api";
+import { useAuth } from "./hooks/useAuth";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+
+  const { error, signInWithOtp, verifyOtp } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setResult(null);
+
     if (!agree) {
-      setError("Вы должны согласиться с условиями");
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await fetch(`${apiUrl}/${code ? "confirm" : "login"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await res.json();
+      if (code) {
+        const { success, error: verifyError } = await verifyOtp(email, code);
 
-      if (!res.ok) {
-        setError(data.error || "Ошибка авторизации/регистрации");
+        if (success) {
+          setResult("Вход выполнен успешно!");
+          setEmail("");
+          setCode("");
+        } else {
+          setResult(`Ошибка: ${verifyError}`);
+        }
       } else {
-        setResult(
-          code && data.status === "login"
-            ? "Вход выполнен"
-            : "Регистрация успешна"
-        );
+        // Отправка OTP
+        const { success, error: otpError } = await signInWithOtp(email);
+
+        if (success) {
+          setResult("Код подтверждения отправлен на ваш email");
+        } else {
+          setResult(`Ошибка: ${otpError}`);
+        }
       }
     } catch (e) {
-      setError("Ошибка сети");
+      setResult("Ошибка сети");
     } finally {
       setLoading(false);
     }
@@ -65,7 +68,7 @@ export default function AuthForm() {
         required
       />
       <input
-        placeholder="Code"
+        placeholder="Confirmation code"
         value={code}
         onChange={(e) => setCode(e.target.value)}
       />
@@ -80,11 +83,15 @@ export default function AuthForm() {
           условиями
         </a>
       </label>
-      <button type="submit" disabled={loading}>
-        {loading ? "Отправка..." : "Войти / Зарегистрироваться"}
+      <button type="submit" disabled={loading || !agree}>
+        {loading ? "Отправка..." : code ? "Подтвердить код" : "Отправить код"}
       </button>
       {error && <div style={{ color: "red" }}>{error}</div>}
-      {result && <div style={{ color: "green" }}>{result}</div>}
+      {result && (
+        <div style={{ color: result.includes("Ошибка") ? "red" : "green" }}>
+          {result}
+        </div>
+      )}
     </form>
   );
 }

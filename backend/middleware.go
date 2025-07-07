@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -20,11 +21,10 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 
 	return cors.New(cors.Config{
-		AllowOrigins:     []string{allowedOrigin},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		AllowOrigins: []string{allowedOrigin},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		MaxAge:       12 * time.Hour,
 	})
 }
 
@@ -38,13 +38,21 @@ func recoveryMiddleware() gin.HandlerFunc {
 
 func authMiddleware(container *Container) gin.HandlerFunc {
 	return func(g *gin.Context) {
-		accessToken, _ := g.Cookie("access_token")
-		refreshToken, err2 := g.Cookie("refresh_token")
-		if err2 != nil {
-			container.Logger.Error("[authMiddleware] No refresh token")
+		authHeader := g.GetHeader("Authorization")
+		if authHeader == "" {
+			container.Logger.Error("[authMiddleware] No Authorization header")
 			g.AbortWithStatusJSON(http.StatusUnauthorized, nil)
 			return
 		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			container.Logger.Error("[authMiddleware] Invalid Authorization header format")
+			g.AbortWithStatusJSON(http.StatusUnauthorized, nil)
+			return
+		}
+
+		accessToken := parts[1]
 
 		claims := jwt.MapClaims{}
 		jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
@@ -52,29 +60,8 @@ func authMiddleware(container *Container) gin.HandlerFunc {
 			return []byte(jwtSecret), nil
 		})
 
-		if err == nil && token.Valid {
-			g.Set("user", claims)
-			g.Next()
-			return
-		}
-
-		newSession, err := container.Supabase.client.Auth.RefreshUser(g, accessToken, refreshToken)
-		if err != nil {
-			container.Logger.Error("[authMiddleware] Invalid or expired tokens")
-			g.AbortWithStatusJSON(http.StatusUnauthorized, nil)
-			return
-		}
-
-		setCookie(g, "access_token", newSession.AccessToken, newSession.ExpiresIn, true)
-		setCookie(g, "refresh_token", newSession.RefreshToken, 60*60*24*30, true)
-
-		claims = jwt.MapClaims{}
-		token, err = jwt.ParseWithClaims(newSession.AccessToken, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(jwtSecret), nil
-		})
-
 		if err != nil || !token.Valid {
-			container.Logger.Error("[authMiddleware] Invalid tokens after refresh")
+			container.Logger.Error("[authMiddleware] Invalid or expired token")
 			g.AbortWithStatusJSON(http.StatusUnauthorized, nil)
 			return
 		}

@@ -3,62 +3,58 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 import AuthForm from "./AuthForm";
-
-const apiUrl = import.meta.env.VITE_BACKEND_URL || "/api";
+import { useAuth } from "./hooks/useAuth";
+import { api } from "./utils/api";
 
 function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  const checkConnection = () => {
+  const { user, signOut } = useAuth();
+
+  const checkConnection = async () => {
     setLoading(true);
     setError(false);
 
-    fetch(`${apiUrl}/ping`)
-      .then((res) => res.json())
-      .then((data) => {
-        setResult(data.result);
-      })
-      .catch(() => {
-        setError(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const response = await api.get("/ping");
+      const data = await response.json();
+      setResult(data.result);
+    } catch (err) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const checkProtected = () => {
+  const checkProtected = async () => {
     setLoading(true);
     setError(false);
 
-    fetch(`${apiUrl}/protected`)
-      .then((res) => res.json())
-      .then((data) => {
-        setResult(data.result);
-      })
-      .catch(() => {
-        setError(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const response = await api.get("/protected");
+      const data = await response.json();
+      setResult(data.user_data);
+    } catch (err) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
+  const handleLogout = async () => {
     setLoading(true);
     setError(false);
 
-    fetch(`${apiUrl}/logout`, {
-      method: "POST",
-    })
-      .then((res) => res.json())
-      .catch(() => {
-        setError(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      await signOut();
+      setResult(null);
+    } catch (err) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,20 +68,40 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
+
+      {user ? (
+        <div style={{ marginBottom: "1rem", textAlign: "center" }}>
+          <p>
+            Вы вошли как: <strong>{user.email}</strong>
+          </p>
+        </div>
+      ) : (
+        <div style={{ marginBottom: "1rem", textAlign: "center" }}>
+          <p>Вы не авторизованы</p>
+        </div>
+      )}
+
       <div className="card">
         <button onClick={checkConnection}>Check connection</button>
         <button onClick={checkProtected}>Check protected</button>
-        <button onClick={logout}>Logout</button>
+        <button onClick={handleLogout}>Logout</button>
         <p>
           {loading && "Waiting for response..."}
           {error && "Connection error"}
-          {!loading && !error && result === "pong" && "That's all folks!"}
+          {!loading && !error && result && (
+            <div>
+              <strong>Результат:</strong>
+              <pre style={{ textAlign: "left", fontSize: "12px" }}>
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </div>
+          )}
         </p>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <AuthForm />
+      {!user && <AuthForm />}
     </>
   );
 }
