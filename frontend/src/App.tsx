@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { User as AuthUser } from "@supabase/supabase-js";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
@@ -7,9 +8,9 @@ import { useAuth } from "./hooks/useAuth";
 import { api } from "./utils/api";
 
 function App() {
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<boolean>(false);
 
   const { user, signOut } = useAuth();
 
@@ -18,8 +19,7 @@ function App() {
     setError(false);
 
     try {
-      const response = await api.get("/ping");
-      const data = await response.json();
+      const { data } = await api.get<{ result: string }>("/ping");
       setResult(data.result);
     } catch (err) {
       setError(true);
@@ -33,8 +33,7 @@ function App() {
     setError(false);
 
     try {
-      const response = await api.get("/protected");
-      const data = await response.json();
+      const { data } = await api.get<{ user_data: AuthUser }>("/protected");
       setResult(data.user_data);
     } catch (err) {
       setError(true);

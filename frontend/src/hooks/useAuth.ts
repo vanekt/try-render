@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
+import type { User as AuthUser } from "@supabase/supabase-js";
+
+interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: AuthUser;
+}
 
 export function useAuth() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -19,7 +26,7 @@ export function useAuth() {
         } else {
           setUser(session?.user ?? null);
         }
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message);
       } finally {
         setLoading(false);
@@ -30,7 +37,7 @@ export function useAuth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -38,7 +45,7 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithOtp = async (email) => {
+  const signInWithOtp = async (email: string): Promise<AuthResult> => {
     try {
       setError(null);
 
@@ -55,13 +62,16 @@ export function useAuth() {
       }
 
       return { success: true };
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
       return { success: false, error: err.message };
     }
   };
 
-  const verifyOtp = async (email, token) => {
+  const verifyOtp = async (
+    email: string,
+    token: string
+  ): Promise<AuthResult> => {
     try {
       setError(null);
 
@@ -77,14 +87,14 @@ export function useAuth() {
       }
 
       setUser(data.user);
-      return { success: true, user: data.user };
-    } catch (err) {
+      return { success: true, user: data.user ?? undefined };
+    } catch (err: any) {
       setError(err.message);
       return { success: false, error: err.message };
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<AuthResult> => {
     try {
       setError(null);
 
@@ -97,13 +107,13 @@ export function useAuth() {
 
       setUser(null);
       return { success: true };
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
       return { success: false, error: err.message };
     }
   };
 
-  const getAccessToken = async () => {
+  const getAccessToken = async (): Promise<string | null> => {
     try {
       const {
         data: { session },
@@ -114,7 +124,7 @@ export function useAuth() {
         throw error;
       }
 
-      return session?.access_token;
+      return session?.access_token ?? null;
     } catch (err) {
       console.error("Error getting access token:", err);
       return null;

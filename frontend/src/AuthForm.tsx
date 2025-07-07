@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import { useAuth } from "./hooks/useAuth";
 
 export default function AuthForm() {
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [agree, setAgree] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [email, setEmail] = useState<string>("");
+  const [code, setCode] = useState<string>("");
+  const [agree, setAgree] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [result, setResult] = useState<string | null>(null);
 
   const { error, signInWithOtp, verifyOtp } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setResult(null);
 
@@ -32,7 +32,6 @@ export default function AuthForm() {
           setResult(`Ошибка: ${verifyError}`);
         }
       } else {
-        // Отправка OTP
         const { success, error: otpError } = await signInWithOtp(email);
 
         if (success) {
@@ -64,19 +63,23 @@ export default function AuthForm() {
         type="email"
         placeholder="Email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          setEmail(e.target.value)
+        }
         required
       />
       <input
         placeholder="Confirmation code"
         value={code}
-        onChange={(e) => setCode(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setCode(e.target.value)}
       />
       <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <input
           type="checkbox"
           checked={agree}
-          onChange={(e) => setAgree(e.target.checked)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            setAgree(e.target.checked)
+          }
         />
         Я согласен с{" "}
         <a href="#" target="_blank" rel="noopener noreferrer">
