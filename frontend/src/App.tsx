@@ -6,6 +6,7 @@ import "./App.css";
 import AuthForm from "./AuthForm";
 import { useAuth } from "./hooks/useAuth";
 import { api } from "./utils/api";
+import UploadForm from "./UploadForm";
 
 function App() {
   const [result, setResult] = useState<any>(null);
@@ -101,6 +102,7 @@ function App() {
         Click on the Vite and React logos to learn more
       </p>
       {!user && <AuthForm />}
+      {user && <UploadForm />}
     </>
   );
 }
