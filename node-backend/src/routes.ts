@@ -25,10 +25,6 @@ async function registerRoutes(
   fastify: FastifyInstance,
   opts: FastifyPluginOptions
 ) {
-  fastify.get("/ping", async (request: FastifyRequest, reply: FastifyReply) => {
-    reply.send({ result: "pong" });
-  });
-
   fastify.post(
     "/upload",
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -57,11 +53,50 @@ async function registerRoutes(
     }
   );
 
+  fastify.get("/ping", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const chatChannel = supabase.realtime.channel("public");
+
+      chatChannel.send({
+        type: "broadcast",
+        event: "ping",
+        payload: {
+          user_id: request.user?.sub,
+          data: "pong",
+        },
+      });
+
+      reply.send({ result: "pong" });
+    } catch (err) {
+      logger.error({ err }, "Error in realtime operations");
+      reply.code(500).send({ error: "Realtime operation failed" });
+    }
+  });
+
   fastify.get(
     "/protected",
     { preHandler: fastify.auth },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      reply.send({ user_data: request.user });
+      try {
+        // const { data } = await supabase.auth.getUser(request.token);
+        const chatChannel = supabase.realtime.channel("protected");
+
+        chatChannel.send({
+          type: "broadcast",
+          event: "user",
+          payload: {
+            user_id: request.user?.sub,
+            data: request.user,
+          },
+        });
+
+        reply.send({
+          user_data: request.user,
+        });
+      } catch (err) {
+        logger.error({ err }, "Error in realtime operations");
+        reply.code(500).send({ error: "Realtime operation failed" });
+      }
     }
   );
 }

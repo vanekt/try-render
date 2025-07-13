@@ -1,5 +1,6 @@
 import "fastify";
 import { FastifyRequest, FastifyReply } from "fastify";
+import { JwtPayload } from "@supabase/supabase-js";
 
 export type AuthMiddleware = (
   request: FastifyRequest,
@@ -12,6 +13,7 @@ declare module "fastify" {
     auth: AuthMiddleware;
   }
   interface FastifyRequest {
-    user?: unknown;
+    user?: JwtPayload;
+    token?: string;
   }
 }

@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "dotenv/config.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import logger from "./logger.js";
