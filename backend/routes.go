@@ -41,12 +41,6 @@ var bucketName = os.Getenv("SUPABASE_BUCKET_NAME")
 var expiresIn = 60 * 60
 
 func handleUpload(g *gin.Context, c *Container) {
-	defer func() {
-		if r := recover(); r != nil {
-			c.Logger.Error("panic in supabase lib: %v", r)
-		}
-	}()
-
 	var req UploadRequest
 	if err := g.ShouldBindJSON(&req); err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
@@ -55,11 +49,17 @@ func handleUpload(g *gin.Context, c *Container) {
 
 	resultFiles := make([]File, len(req.Files))
 	for i := 0; i < len(req.Files); i++ {
-		resp := c.Supabase.client.Storage.From(bucketName).CreateSignedUrl(req.Files[i].Path, expiresIn)
+		resp, err := c.Supabase.client.Storage.CreateSignedUrl(bucketName, req.Files[i].Path, expiresIn)
+		if err != nil {
+			c.Logger.Error("cannot create signedUrl: %v", err)
+			g.JSON(http.StatusBadGateway, nil)
+			return
+		}
+
 		resultFiles[i] = File{
 			Name: req.Files[i].Name,
 			Path: req.Files[i].Path,
-			Url:  resp.SignedUrl,
+			Url:  resp.SignedURL,
 		}
 	}
 
